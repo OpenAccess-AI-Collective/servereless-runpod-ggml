@@ -1,0 +1,21 @@
+---
+model_url: <replace me>
+typer:
+  delay: 0.1
+runpod:
+  endpoint_id: <replace me>
+  prefer_async: true
+llm:
+  top_k:
+  top_p:
+  temperature:
+  repetition_penalty:
+  last_n_tokens:
+  seed: -1
+  batch_size: 8
+  threads: -1
+  stop:
+    - "</s>"
+queue:
+  max_size: 16
+  concurrency_count: 1  # recommend setting this no larger than your current
