@@ -19,6 +19,7 @@ you're ready to start testing your language model.
     - `GGML_LAYERS`, the number of hidden layers to load into VRAM. Check your models `config.json` to get the correct values. 13B LlaMa has 40 hidden layers
     - `GGML_REVISION`, typically `main`, but if you want to use a specific commit version of a file, this is where you set the git SHA
 <details>
+
 ![configure template](static/configure-template.png)
 </details>
 
@@ -34,18 +35,25 @@ you're ready to start testing your language model.
   - When choosing GPU types, try to use the smallest amount of VRAM that you model will fit in. 13B models should fit in 16GB of VRAM. Going higher to the 24GB pro will cost almost twice as much without significant performance increases. But go ahead and select at least two to ensure you have available capacity
 
 <details>
-    ![create endpoint](static/create-endpoint.png)
+
+![create endpoint](static/create-endpoint.png)
+
 </details>
 <details>
-    ![configure volumes](static/configure-volumes.png)
+
+![configure volumes](static/configure-volumes.png)
+
 </details>
 <details>
-    ![configure gpus](static/configure-gpus.png)
+
+![configure gpus](static/configure-gpus.png)
+
 </details>
 
 - Once you've created your endpoint, you can view the details to get the endpoints' URLs.
 <details>
-    ![endpoint details](static/endpoint-urls.png)
+
+![endpoint details](static/endpoint-urls.png)
 </details>
 
 - Create an [API Key](https://www.runpod.io/console/serverless/user/settings), you'll need to use this to auth to your endpoints
