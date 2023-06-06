@@ -1,6 +1,7 @@
 ARG CUDA_VERSION="11.8.0"
 ARG UBUNTU_VERSION="22.04"
-FROM winglian/runpod-serverless-ggml-base:latest as ctransformers-base
+ARG BASE_TAG="latest"
+FROM winglian/runpod-serverless-ggml-base:$BASE_TAG as ctransformers-base
 
 FROM nvidia/cuda:$CUDA_VERSION-runtime-ubuntu$UBUNTU_VERSION
 
