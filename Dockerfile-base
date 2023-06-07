@@ -64,7 +64,7 @@ RUN curl -L https://cmake.org/files/v$CMAKE_VERSION/cmake-$CMAKE_VERSION_PATCH-$
     sh /tmp/cmake-$CMAKE_VERSION_PATCH-$CMAKE_OS-x86_64.sh --skip-license --prefix=/opt/cmake && \
     ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
 
-USER appsuer
+USER appuser
 WORKDIR /build
 
 RUN git clone --depth 1 --branch $CTRANSFORMERS_VERSION https://github.com/marella/ctransformers.git /build/ctransformers

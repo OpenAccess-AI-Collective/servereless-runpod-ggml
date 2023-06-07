@@ -1,1 +1,1 @@
-runpod @ git+https://github.com/wingliang/runpod-python.git@streaming_job
+runpod @ git+https://github.com/winglian/runpod-python.git@streaming_job

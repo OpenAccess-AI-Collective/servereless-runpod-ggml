@@ -1,7 +1,7 @@
 ---
 model_url: <replace me>
 typer:
-  delay: 0.1
+  delay: 0.2
 runpod:
   endpoint_id: <replace me>
   prefer_async: true

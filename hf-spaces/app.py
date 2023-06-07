@@ -13,14 +13,14 @@ with open("./config.yml", "r") as f:
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
 
-def make_prediction(prompt, max_tokens=None, temperature=None, top_p=None, top_k=None, repeat_penalty=None):
+def make_prediction(prompt, max_tokens=None, temperature=None, top_p=None, top_k=None, repetition_penalty=None):
     input = config["llm"].copy()
     input["prompt"] = prompt
-    input["max_tokens"] = max_tokens
+    input["max_new_tokens"] = max_tokens
     input["temperature"] = temperature
     input["top_p"] = top_p
     input["top_k"] = top_k
-    input["repeat_penalty"] = repeat_penalty
+    input["repetition_penalty"] = repetition_penalty
 
     if config['runpod']['prefer_async']:
         url = f"https://api.runpod.ai/v2/{config['runpod']['endpoint_id']}/run"
@@ -33,12 +33,27 @@ def make_prediction(prompt, max_tokens=None, temperature=None, top_p=None, top_k
 
     if response.status_code == 200:
         data = response.json()
-        status = data.get('status')
-        if status == 'COMPLETED':
-            return data["output"]
-        else:
-            task_id = data.get('id')
-            return poll_for_status(task_id)
+        task_id = data.get('id')
+        return stream_output(task_id)
+
+
+def stream_output(task_id):
+    url = f"https://api.runpod.ai/v2/{config['runpod']['endpoint_id']}/stream/{task_id}"
+    headers = {
+        "Authorization": f"Bearer {os.environ['RUNPOD_AI_API_KEY']}"
+    }
+
+    while True:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            yield "".join([s["output"] for s in data["stream"]])
+            if data.get('status') == 'COMPLETED':
+                return
+        elif response.status_code >= 400:
+            logging.error(response.json())
+        # Sleep for 3 seconds between each request
+        sleep(1)
 
 
 def poll_for_status(task_id):
@@ -73,7 +88,7 @@ def user(message, nudge_msg, history):
     return "", nudge_msg, history
 
 
-def chat(history, system_message, max_tokens, temperature, top_p, top_k, repeat_penalty):
+def chat(history, system_message, max_tokens, temperature, top_p, top_k, repetition_penalty):
     history = history or []
 
     messages = system_message.strip() + "\n" + \
@@ -89,21 +104,22 @@ def chat(history, system_message, max_tokens, temperature, top_p, top_k, repeat_
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
-        repeat_penalty=repeat_penalty,
+        repetition_penalty=repetition_penalty,
     )
-    tokens = re.findall(r'\s*\S+\s*', prediction)
-    for s in tokens:
-        answer = s
-        print(history)
-        print(history[-1])
-        history[-1][1] += answer
-        # stream the response
-        yield history, history, ""
-        sleep(config['typer']['delay'])
+    for tokens in prediction:
+        tokens = re.findall(r'\s*\S+\s*', tokens)
+        for s in tokens:
+            answer = s
+            print(history)
+            print(history[-1])
+            history[-1][1] += answer
+            # stream the response
+            yield history, history, ""
+            sleep(config['typer']['delay'])
 
 
 
-def rp_chat(history, system_message, max_tokens, temperature, top_p, top_k, repeat_penalty):
+def rp_chat(history, system_message, max_tokens, temperature, top_p, top_k, repetition_penalty):
     history = history or []
 
     messages = "<|system|>" + system_message.strip() + "\n" + \
@@ -119,7 +135,7 @@ def rp_chat(history, system_message, max_tokens, temperature, top_p, top_k, repe
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
-        repeat_penalty=repeat_penalty,
+        repetition_penalty=repetition_penalty,
     )
     tokens = re.findall(r'\s*\S+\s*', prediction)
     for s in tokens:
@@ -150,10 +166,9 @@ with gr.Blocks() as demo:
                     ### brought to you by OpenAccess AI Collective
                     - Unquantized model available at {config["model_url"]}
                     - This Space runs on CPU only, and uses GGML with GPU support via Runpod Serverless.
-                    - Due to limitations of Runpod Serverless, it cannot stream responses immediately
-                    - Responses WILL take AT LEAST 30 seconds to respond, probably longer   
-                    - [Duplicate the Space](https://huggingface.co/spaces/openaccess-ai-collective/ggml-runpod-ui?duplicate=true) to skip the queue and run in a private space or to use your own GGML models. You will need to configure you own runpod serverless endpoint.
-                    - When using your own models, simply update the [config.yml](https://huggingface.co/spaces/openaccess-ai-collective/ggml-runpod-ui/blob/main/config.yml)
+                    - Due to limitations of Runpod Serverless cold starts, it may not stream responses immediately
+                    - Responses MAY take AT LEAST 30 seconds to start for your first request. After that it should resond quicker.   
+                    - When using your own models, simply update the `config.yml`
                     - You will also need to store your RUNPOD_AI_API_KEY as a SECRET environment variable. DO NOT STORE THIS IN THE config.yml.
                     - Many thanks to [TheBloke](https://huggingface.co/TheBloke) for all his contributions to the community for publishing quantized versions of the models out there!  
                     """)
@@ -177,7 +192,7 @@ with gr.Blocks() as demo:
                 temperature = gr.Slider(0.2, 2.0, label="Temperature", step=0.1, value=0.8)
                 top_p = gr.Slider(0.0, 1.0, label="Top P", step=0.05, value=0.95)
                 top_k = gr.Slider(0, 100, label="Top K", step=1, value=40)
-                repeat_penalty = gr.Slider(0.0, 2.0, label="Repetition Penalty", step=0.1, value=1.1)
+                repetition_penalty = gr.Slider(0.0, 2.0, label="Repetition Penalty", step=0.1, value=1.1)
 
         system_msg = gr.Textbox(
             start_message, label="System Message", interactive=True, visible=True, placeholder="system prompt, useful for RP", lines=5)
@@ -192,12 +207,12 @@ with gr.Blocks() as demo:
         submit_click_event = submit.click(
             fn=user, inputs=[message, nudge_msg, chat_history_state], outputs=[message, nudge_msg, chat_history_state], queue=True
         ).then(
-            fn=chat, inputs=[chat_history_state, system_msg, max_tokens, temperature, top_p, top_k, repeat_penalty], outputs=[chatbot, chat_history_state, message], queue=True
+            fn=chat, inputs=[chat_history_state, system_msg, max_tokens, temperature, top_p, top_k, repetition_penalty], outputs=[chatbot, chat_history_state, message], queue=True
         )
         roleplay_click_event = roleplay.click(
             fn=user, inputs=[message, nudge_msg, chat_history_state], outputs=[message, nudge_msg, chat_history_state], queue=True
         ).then(
-            fn=rp_chat, inputs=[chat_history_state, system_msg, max_tokens, temperature, top_p, top_k, repeat_penalty], outputs=[chatbot, chat_history_state, message], queue=True
+            fn=rp_chat, inputs=[chat_history_state, system_msg, max_tokens, temperature, top_p, top_k, repetition_penalty], outputs=[chatbot, chat_history_state, message], queue=True
         )
         stop.click(fn=None, inputs=None, outputs=None, cancels=[submit_click_event, roleplay_click_event], queue=False)
 
