@@ -1,5 +1,7 @@
 import logging
 import os
+from typing import Generator
+
 import runpod
 from ctransformers import AutoModelForCausalLM
 from huggingface_hub import hf_hub_download
@@ -19,8 +21,14 @@ def get_llm():
 
 def inference(event):
     job_input = event["input"]
-    prompt = job_input.pop("prompt")
-    for res in get_llm(prompt, stream=True, **job_input):
-        yield res
+    stream = event["stream"] if "stream" in event else True
+    prompt: str = job_input.pop("prompt")
+    llm_res: Generator[str, None, None] = get_llm()(prompt, stream=stream, **job_input)
+    if stream:
+        for res in llm_res:
+            yield res
+    else:
+        return llm_res
+
 
 runpod.serverless.start({"handler": inference})
