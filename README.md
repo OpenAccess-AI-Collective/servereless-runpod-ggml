@@ -66,7 +66,9 @@ Authorization: Bearer <redacted - put your api key here>
 Content-Type: application/json; charset=utf-8
 
 {
-  "input": {"prompt": "The following is a chat between a user and a helpful ASSISTANT.\nUSER: Write a python program to calculate and print the first 10 prime numbers.\nASSISTANT:"}
+  "input": {"prompt": "The following is a chat between a user and a helpful ASSISTANT.\nUSER: Write a python program to calculate and print the first 10 prime numbers.\nASSISTANT:"},
+  "stream": false
+  
 }
 
 HTTP/1.1 200 OK
