@@ -66,9 +66,10 @@ Authorization: Bearer <redacted - put your api key here>
 Content-Type: application/json; charset=utf-8
 
 {
-  "input": {"prompt": "The following is a chat between a user and a helpful ASSISTANT.\nUSER: Write a python program to calculate and print the first 10 prime numbers.\nASSISTANT:"},
-  "stream": false
-  
+  "input": {
+      "prompt": "The following is a chat between a USER and a helpful ASSISTANT.\nUSER: Tell me about the Minotaur. \nASSISTANT:",
+      "stream": false
+  }
 }
 
 HTTP/1.1 200 OK
@@ -83,17 +84,16 @@ Content-Type: application/json; charset=utf-8
 
 - You will need to use the id provided to poll for the inference prediction like so:
 ```http request
-GET https://api.runpod.ai/v2/jifr1oczbrmr3n/status/c8231ef5-b969-4854-94d3-3f70ede17ce5
-Authorization: Bearer 1PHXI20MZ01W3654ZRP92B27Y3MH7E3LPEI6T4C6
+GET https://api.runpod.ai/v2/jifr1oczbrmr3n/stream/c8231ef5-b969-4854-94d3-3f70ede17ce5
+Authorization: Bearer <redacted - put your api key here>
 
 HTTP/1.1 200 OK
 Date: Sat, 03 Jun 2023 05:22:48 GMT
 Content-Type: application/json
 
 {
-  "delayTime": 98329,
-  "id": "c8231ef5-b969-4854-94d3-3f70ede17ce5",
-  "status": "IN_PROGRESS"
+  "status": "IN_PROGRESS",
+  "stream": []
 }
 ```
 
@@ -104,11 +104,12 @@ Date: Sat, 03 Jun 2023 05:23:54 GMT
 Content-Type: application/json
 
 {
-  "delayTime": 98329,
-  "executionTime": 38061,
-  "id": "c8231ef5-b969-4854-94d3-3f70ede17ce5",
-  "output": "Sure, here's a Python program that calculates and prints the first 10 prime numbers:\n```python\ndef is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nprimes = [2]\nfor i in range(3, len(primes)):\n    if is_prime(i):\n        primes.append(i)\n    \nprint(f\"The first 10 prime numbers are: {', '.join(str(p) for p in primes[:10])}\")\n```\nHere's how the program works:\n- The `is_prime` function checks if a given number is prime or not. It starts by checking if `n` is less than 2, which means it's not a prime number. Then, for each integer from 2 to the square root of `n`, it checks if `n` is divisible by that integer. If it finds a factor, it returns `False`. Otherwise, it returns",
-  "status": "COMPLETED"
+  "status": "COMPLETED",
+  "stream": [
+    {
+      "output": " The minotaur is one of Greek mythology's most famous monsters. He was a creature with the body of a bull and the head of a man, often depicted as having a human torso but the hindquarters of a bull. He was born to the god Poseidon and his human wife Pasiphaë, who lived on the island of Crete.\n\nThe minotaur was kept in a labyrinth designed by the architect Daedalus at the request of King Minos. The labyrinth had many twists and turns that made it impossible to navigate without getting lost. Once every nine years, seven young men and women were sacrificed as offerings to the beast.\n\nTheseus, a Greek hero who set out on his first journey, learned of this sacrifice from King Aegeus, his father. He volunteered to go to Crete and defeat the minotaur and return victorious or perish in the attempt. On arriving at Crete, Theseus was told by Ariadne, daughter of Minos, that he could kill the minotaur if he used a ball of thread given to him by her.\n\nTheseus followed the thread"
+    }
+  ]
 }
 ```
 

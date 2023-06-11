@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Generator
+from typing import Generator, Union
 
 import runpod
 from ctransformers import AutoModelForCausalLM
@@ -19,16 +19,18 @@ def get_llm():
     return llm
 
 
-def inference(event):
+def inference(event) -> Generator[str, None, None]:
+    logging.info(event)
     job_input = event["input"]
-    stream = event["stream"] if "stream" in event else True
     prompt: str = job_input.pop("prompt")
-    llm_res: Generator[str, None, None] = get_llm()(prompt, stream=stream, **job_input)
+    stream: bool = job_input.pop("stream", True)
+    llm_res: Union[str, Generator[str, None, None]] = get_llm()(prompt, stream=stream, **job_input)
     if stream:
         for res in llm_res:
             yield res
     else:
-        return llm_res
+        # because this fn is always a generator, we have to yield
+        yield llm_res
 
 
 runpod.serverless.start({"handler": inference})
